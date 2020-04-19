@@ -13,7 +13,7 @@ setup(name='niiview',
     	'nibabel',
       'matplotlib',
       'numpy',
-      'libsixel-python'
+      'libsixel-python',
       'getkey'
       ],
 	  scripts=[
