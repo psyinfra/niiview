@@ -1,4 +1,4 @@
-#!/home/tkadelka/env/niicat_env/bin/python3
+#!/usr/bin/env python
 
 import os
 import sys
