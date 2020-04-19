@@ -18,21 +18,6 @@ from io import BytesIO
 # from https://github.com/vnckppl/niipre"""
 def create_plot( show ):
 
-    # Spacing for Aspect Ratio
-    sX = nifti_image.header['pixdim'][1]
-    sY = nifti_image.header['pixdim'][2]
-    sZ = nifti_image.header['pixdim'][3]
-
-    # Size per slice
-    lX = nifti_data.shape[0]
-    lY = nifti_data.shape[1]
-    lZ = nifti_data.shape[2]
-
-    # True middle point
-    tmX = lX / 2.0
-    tmY = lY / 2.0
-    tmZ = lZ / 2.0
-
     # Orientation
     qfX = nifti_image.get_qform()[0, 0]
     sfX = nifti_image.get_sform()[0, 0]
@@ -57,27 +42,22 @@ def create_plot( show ):
         oL = ''
         oR = ''
 
-
-
-    # Plot main window
     fig_jpeg = plt.figure(
         facecolor='black',
         figsize=(5, 4),
         dpi=dpi
     )
-
-
-
+	
     # Coronal
     ax1 = fig_jpeg.add_subplot(2, 2, 1)
     imgplot = plt.imshow(
         np.rot90(nifti_data[:, show[1], :]),
-        aspect=sZ / sX,
+        aspect=nifti_image.header['pixdim'][3] / nifti_image.header['pixdim'][1],
     )
     imgplot.set_cmap('gray')
 
-    ax1.hlines(tmZ, 0, lX, colors='red', linestyles='dotted', linewidth=.5)
-    ax1.vlines(tmX, 0, lZ, colors='red', linestyles='dotted', linewidth=.5)
+    ax1.hlines(nifti_data.shape[2] / 2.0, 0, nifti_data.shape[0], colors='red', linestyles='dotted', linewidth=.5)
+    ax1.vlines(nifti_data.shape[0] / 2.0, 0, nifti_data.shape[2], colors='red', linestyles='dotted', linewidth=.5)
 
     plt.axis('off')
 
@@ -85,12 +65,12 @@ def create_plot( show ):
     ax2 = fig_jpeg.add_subplot(2, 2, 2)
     imgplot = plt.imshow(
         np.rot90(nifti_data[show[0], :, :]),
-        aspect=sZ / sY,
+        aspect=nifti_image.header['pixdim'][3] / nifti_image.header['pixdim'][2],
     )
     imgplot.set_cmap('gray')
 
-    ax2.hlines(tmZ, 0, lY, colors='red', linestyles='dotted', linewidth=.5)
-    ax2.vlines(tmY, 0, lZ, colors='red', linestyles='dotted', linewidth=.5)
+    ax2.hlines(nifti_data.shape[2] / 2.0, 0, nifti_data.shape[1], colors='red', linestyles='dotted', linewidth=.5)
+    ax2.vlines(nifti_data.shape[1] / 2.0, 0, nifti_data.shape[2], colors='red', linestyles='dotted', linewidth=.5)
 
     plt.axis('off')
 
@@ -98,12 +78,12 @@ def create_plot( show ):
     ax3 = fig_jpeg.add_subplot(2, 2, 3)
     imgplot = plt.imshow(
         np.rot90(nifti_data[:, :, show[2]]),
-        aspect=sY / sX
+        aspect=nifti_image.header['pixdim'][2] / nifti_image.header['pixdim'][1]
     )
     imgplot.set_cmap('gray')
 
-    ax3.hlines(tmY, 0, lX, colors='red', linestyles='dotted', linewidth=.5)
-    ax3.vlines(tmX, 0, lY, colors='red', linestyles='dotted', linewidth=.5)
+    ax3.hlines(nifti_data.shape[1] / 2.0, 0, nifti_data.shape[0], colors='red', linestyles='dotted', linewidth=.5)
+    ax3.vlines(nifti_data.shape[0] / 2.0, 0, nifti_data.shape[1], colors='red', linestyles='dotted', linewidth=.5)
 
     plt.axis('off')
 
@@ -125,11 +105,11 @@ def create_plot( show ):
 
     # Spacing
     spacing = ("Spacing: "
-               + str(np.round(sX, decimals=2))
+               + str(np.round(nifti_image.header['pixdim'][1], decimals=2))
                + " x "
-               + str(np.round(sY, decimals=2))
+               + str(np.round(nifti_image.header['pixdim'][2], decimals=2))
                + " x "
-               + str(np.round(sZ, decimals=2))
+               + str(np.round(nifti_image.header['pixdim'][3], decimals=2))
                + " mm"
                )
 
@@ -171,7 +151,6 @@ def create_plot( show ):
     plt.axis('off')
     # Adjust whitespace
     plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
-    
 
 
 
@@ -236,7 +215,7 @@ def main():
     args = parser.parse_args()
 
     #### set global vars ####
-    global nifti_image, nifti_data, tmp_nifti_file_name, dpi
+    global nifti_image, nifti_data, tmp_nifti_file_name, dpi#, fig_jpeg
     # Try to load the nifti-data from arguments and check for errors
     nifti_image = nb.load( args.nifti_file )
     # get 3D-image (first time point) in case of 4D-input
@@ -256,6 +235,14 @@ def main():
     nifti_data[np.isnan(nifti_data)] = 0
     # Black background
     plt.style.use('dark_background')
+
+    # Plot main window
+#    fig_jpeg = plt.figure(
+#        facecolor='black',
+#        figsize=(5, 4),
+#        dpi=dpi
+#    )
+
 
     #### open/show the image ####
     display_nifti()
