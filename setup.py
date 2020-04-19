@@ -10,12 +10,13 @@ setup(name='niiview',
       packages=find_packages(),
       license='LICENSE.txt',
       install_requires=[
-      'nibabel',
+    	'nibabel',
       'matplotlib',
       'numpy',
       'libsixel-python'
-	   ],
-	   scripts=[
+      'getkey'
+      ],
+	  scripts=[
 	       'bin/niiview'
 	       ]
 )
