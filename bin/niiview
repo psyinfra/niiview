@@ -43,15 +43,14 @@ def create_plot():
 def get_text():
     if nifti_image.header['dim'][0] == 4:
         return str(
-                "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " left\n"
-              + "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " right\n"
+                "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " left\n"
+              + "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " right\n"
               + "(E/D) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
               + "(T/G) -> " + str(fourth_d+1) + "/" + str(nifti_image.get_fdata().shape[3]) + " in time\n"
-              )
     return str(
-            "(W/S) -> " + str(show[0]+1) + "/" + str(nifti_data.shape[0]) + " left\n"
-          + "(Q/A) -> " + str(show[1]+1) + "/" + str(nifti_data.shape[1]) + " right\n"
-          + "(E/D) -> " + str(show[2]+1) + "/" + str(nifti_data.shape[2]) + " down\n"
+                "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " left\n"
+              + "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " right\n"
+              + "(E/D) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
           )
 
 
