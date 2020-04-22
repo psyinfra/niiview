@@ -41,19 +41,19 @@ def create_plot():
 
 # build information
 def get_text():
+    if nifti_image.header['dim'][0] == 4:
+        return str(
+                "(E/D) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " left\n"
+              + "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " right\n"
+              + "(W/S) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
+              + "(T/G) -> " + str(fourth_d+1) + "/" + str(nifti_data.shape[3]) + " in time\n"
+              )
     return str(
-            "(W/S) -> " + str(show[1]+1) + "/" + str(nifti_data.shape[0]) + " left" + "\n"
-          + "(E/D) -> " + str(show[0]+1) + "/" + str(nifti_data.shape[1]) + " right" + "\n"
-          + "(Q/A) -> " + str(show[2]+1) + "/" + str(nifti_data.shape[2]) + " down" + "\n"
+            "(E/D) -> " + str(show[0]+1) + "/" + str(nifti_data.shape[0]) + " left\n"
+          + "(Q/A) -> " + str(show[1]+1) + "/" + str(nifti_data.shape[1]) + " right\n"
+          + "(W/S) -> " + str(show[2]+1) + "/" + str(nifti_data.shape[2]) + " down\n"
           )
 
-#nifti_data.shape[0]/2-1), int(nifti_data.shape[1]/2-1) , int(nifti_data.shape[2]/2-1
-
-    dimensions = str()             + " x " +  str(nifti_data.shape[1])            + " x " + str(nifti_data.shape[2])
-    voxelsize  = str(nifti_image.header['pixdim'][1]) + " x " + str(nifti_image.header['pixdim'][2]) + " x, " + str(nifti_image.header['pixdim'][3]) + " mm"
-    return str( "Dimensions : "  + dimensions + "\n"
-              + "Voxel-size : "  + voxelsize + "\n"
-              + "Time-points: " + str(nifti_image.header['dim'][4]) + "\n" )
 
 
 
@@ -84,34 +84,34 @@ def display_nifti():
         # "enter"-key exit the function
         key = getkey()
         # change up-right
-        if key in ['e']:
+        if key in ['w']:
             if show[0] + 10 >= nifti_data.shape[0]:
                 show[0] = nifti_data.shape[0]-1
             else:
                 show[0] = show[0] + 10
-        elif key in ['d']:
+        elif key in ['s']:
             if show[0] - 10 <= 0:
                 show[0] = 0
             else:
                 show[0] = show[0] - 10
         # change up-left
-        elif key in ['w']:
+        elif key in ['q']:
             if show[1] + 10 >= nifti_data.shape[1]:
                 show[1] = nifti_data.shape[1]-1
             else:
                 show[1] = show[1] + 10
-        elif key in ['s']:
+        elif key in ['a']:
             if show[1] - 10 <= 0:
                 show[1] = 0
             else:
                 show[1] = show[1] - 10
         # change down-left
-        elif key in ['q']:
+        elif key in ['e']:
             if show[2] + 10 >= nifti_data.shape[2]:
                 show[2] = nifti_data.shape[2]-1
             else:
                 show[2] = show[2] + 10
-        elif key in ['a']:
+        elif key in ['d']:
             if show[2] - 10 <= 0:
                 show[2] = 0
             else:
