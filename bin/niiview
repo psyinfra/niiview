@@ -43,15 +43,15 @@ def create_plot():
 def get_text():
     if nifti_image.header['dim'][0] == 4:
         return str(
-                "(E/D) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " left\n"
+                "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " left\n"
               + "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " right\n"
-              + "(W/S) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
-              + "(T/G) -> " + str(fourth_d+1) + "/" + str(nifti_data.shape[3]) + " in time\n"
+              + "(E/D) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
+              + "(T/G) -> " + str(fourth_d+1) + "/" + str(nifti_image.get_fdata().shape[3]) + " in time\n"
               )
     return str(
-            "(E/D) -> " + str(show[0]+1) + "/" + str(nifti_data.shape[0]) + " left\n"
+            "(W/S) -> " + str(show[0]+1) + "/" + str(nifti_data.shape[0]) + " left\n"
           + "(Q/A) -> " + str(show[1]+1) + "/" + str(nifti_data.shape[1]) + " right\n"
-          + "(W/S) -> " + str(show[2]+1) + "/" + str(nifti_data.shape[2]) + " down\n"
+          + "(E/D) -> " + str(show[2]+1) + "/" + str(nifti_data.shape[2]) + " down\n"
           )
 
 
@@ -60,7 +60,7 @@ def get_text():
 # this function reads the keyboard and calls the function for creating the image.
 def display_nifti():
     # enable changing of global nifti-data for changing point in time
-    global nifti_data
+    global nifti_data, fourth_d
     # create, open and show nifti in terminal
     while( True ):
         # create a jpg from this koordinates of the nifti
@@ -120,13 +120,15 @@ def display_nifti():
         elif key in ['t']:
                 if fourth_d == -1:
                     continue
-                if fourth_d + 1 < nifti_data.shape[4]:
-                    nifti_data = nifti_image.get_data()[:, :, :, fourth_d+1 ]
+                if fourth_d + 1 < nifti_image.get_fdata().shape[3]:
+                    fourth_d = fourth_d + 1
+                    nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d+1 ]
         elif key in ['g']:
                 if fourth_d == -1:
                     continue
                 if fourth_d - 1 >= 0:
-                    nifti_data = nifti_image.get_data()[:, :, :, fourth_d-1 ]
+                    fourth_d = fourth_d - 1
+                    nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d-1 ]
         else:
             return
 
@@ -149,11 +151,11 @@ def main():
     nifti_image = nb.load( args.nifti_file )
     # get 3D-image (first time point) in case of 4D-input
     if nifti_image.header['dim'][0] == 3:
-        nifti_data = nifti_image.get_data()
+        nifti_data = nifti_image.get_fdata()
         # no time points given
         fourth_d = -1
     elif nifti_image.header['dim'][0] == 4:
-        nifti_data = nifti_image.get_data()[:, :, :, 0]
+        nifti_data = nifti_image.get_fdata()[:, :, :, 0]
         fourth_d = 0
     # name of a temporary jpg-file where data is written into, so libsixel can read it
     tmp_nifti_file_name = ".nifti.jpg"
