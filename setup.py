@@ -14,7 +14,8 @@ setup(name='niiview',
       'matplotlib',
       'numpy',
       'libsixel-python',
-      'getkey'
+      'getkey',
+      'Pillow'
       ],
 	  scripts=[
 	       'bin/niiview'
