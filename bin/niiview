@@ -42,12 +42,12 @@ def create_plot():
 # build information
 def get_text():
     return str(
-            "(W/S) -> " + str(show[1]+1) + "/" + str(nifti_data.shape[1]) + " left" + "\n"
-          + "(E/D) -> " + str(show[0]+1) + "/" + str(nifti_data.shape[2]) + " right" + "\n"
-          + "(Q/A) -> " + str(show[2]+1) + "/" + str(nifti_data.shape[3]) + " down" + "\n"
+            "(W/S) -> " + str(show[1]+1) + "/" + str(nifti_data.shape[0]) + " left" + "\n"
+          + "(E/D) -> " + str(show[0]+1) + "/" + str(nifti_data.shape[1]) + " right" + "\n"
+          + "(Q/A) -> " + str(show[2]+1) + "/" + str(nifti_data.shape[2]) + " down" + "\n"
           )
 
-
+#nifti_data.shape[0]/2-1), int(nifti_data.shape[1]/2-1) , int(nifti_data.shape[2]/2-1
 
     dimensions = str()             + " x " +  str(nifti_data.shape[1])            + " x " + str(nifti_data.shape[2])
     voxelsize  = str(nifti_image.header['pixdim'][1]) + " x " + str(nifti_image.header['pixdim'][2]) + " x, " + str(nifti_image.header['pixdim'][3]) + " mm"
@@ -177,8 +177,8 @@ def main():
     ax4 = fig_jpeg.add_subplot(2, 2, 4)
     plt.axis('off')
     show = []
-    # selects middle slices as default vaulues for the koordinates 
-    show = [ int(nifti_data.shape[0]/2-1), int(nifti_data.shape[1]/2-1) , int(nifti_data.shape[2]/2-1) ]
+    # selects middle slices as default vaulues for the koordinates
+    show = [ int((nifti_data.shape[0]/2)-1), int((nifti_data.shape[1]/2)-1) , int((nifti_data.shape[2]/2)-1) ]
 
     #### open/show the image ####
     display_nifti()
