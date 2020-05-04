@@ -1,4 +1,4 @@
-#!/home/tkadelka/env/niiview/bin/python3
+#!/usr/bin/env python
 
 import os
 import sys
@@ -10,6 +10,7 @@ from getkey import getkey, keys
 from libsixel import *
 from PIL import Image
 from io import BytesIO
+
 
 # plot the selected slices
 def create_plot():
@@ -58,29 +59,26 @@ def get_text():
 
 # this function reads the keyboard and calls the function for creating the image.
 def display_nifti():
-    # enable changing of global nifti-data for changing point in time, make figure available
-    global nifti_data, fourth_d, pyplot_image
-
+    # enable changing of global nifti-data for changing point in time
+    global nifti_data, fourth_d
     # create, open and show nifti in terminal
     while( True ):
         # create a jpg from this koordinates of the nifti
         create_plot( )
-        # empty buffer for image in background and for output
+        plt.savefig( tmp_nifti_file_name )
+
+        #read jpg, display it, close it
         s = BytesIO()
-        img_buffer = BytesIO()
-        # save pylot-figure in buffer as image, open as image-file
-        pyplot_image.savefig( img_buffer )
-        pillow_image = Image.open( img_buffer )
-        width, height = pillow_image.size
-        data = pillow_image.tobytes()
+        image = Image.open(tmp_nifti_file_name)
+        width, height = image.size
+        data = image.tobytes()
         output = sixel_output_new(lambda data, s: s.write(data), s)
         dither = sixel_dither_new(256)
-        sixel_dither_initialize(dither, data, width, height, SIXEL_PIXELFORMAT_RGBA8888)
+        sixel_dither_initialize(dither, data, width, height, SIXEL_PIXELFORMAT_RGB888)
         sixel_encode(data, width, height, 1, dither, output)
         os.system("clear")
         print(s.getvalue().decode('ascii'))
-
-
+        image.close()
 
         # wait for user to press a key. For arrows, change displayed slice.
         # "enter"-key exit the function
@@ -135,6 +133,8 @@ def display_nifti():
             return
 
 
+##### TODO: Check 4d-function, it was never tried!!!!!!!!!!!!!
+#####
 # the mainfunction of the niiview-tool
 def main():
 
@@ -146,7 +146,7 @@ def main():
     args = parser.parse_args()
 
     #### set global vars ####
-    global nifti_image, nifti_data, pyplot_image, ax1, ax2, ax3, ax4, show, fourth_d, dpi
+    global nifti_image, nifti_data, tmp_nifti_file_name, fig_jpeg, ax1, ax2, ax3, ax4, show, fourth_d
     # Try to load the nifti-data from arguments and check for errors
     nifti_image = nb.load( args.nifti_file )
     # get 3D-image (first time point) in case of 4D-input
@@ -157,7 +157,8 @@ def main():
     elif nifti_image.header['dim'][0] == 4:
         nifti_data = nifti_image.get_fdata()[:, :, :, 0]
         fourth_d = 0
-    dpi = args.dpi
+    # name of a temporary jpg-file where data is written into, so libsixel can read it
+    tmp_nifti_file_name = ".nifti.jpg"
     # Disable Toolbar for plots
     plt.rcParams['toolbar'] = 'None'
     # Set rounding
@@ -167,15 +168,15 @@ def main():
     # Black background
     plt.style.use('dark_background')
     # build main window
-    pyplot_image = plt.figure( facecolor='black', figsize=(5, 4), dpi=dpi )
+    fig_jpeg = plt.figure( facecolor='black', figsize=(5, 4), dpi=args.dpi )
     # add axes
-    ax1 = pyplot_image.add_subplot(2, 2, 1)
+    ax1 = fig_jpeg.add_subplot(2, 2, 1)
     plt.axis('off')
-    ax2 = pyplot_image.add_subplot(2, 2, 2)
+    ax2 = fig_jpeg.add_subplot(2, 2, 2)
     plt.axis('off')
-    ax3 = pyplot_image.add_subplot(2, 2, 3)
+    ax3 = fig_jpeg.add_subplot(2, 2, 3)
     plt.axis('off')
-    ax4 = pyplot_image.add_subplot(2, 2, 4)
+    ax4 = fig_jpeg.add_subplot(2, 2, 4)
     plt.axis('off')
     show = []
     # selects middle slices as default vaulues for the koordinates
@@ -189,5 +190,4 @@ def main():
 # standard call
 if __name__ == '__main__':
     main()
-
 
