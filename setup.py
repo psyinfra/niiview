@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='niiview',
-      version='1',
+      version='2',
       description='A tool for displaying niftis in xterminals.',
       author='Tobias Kadelka',
       author_email='t.kadelka@fz-juelich.de',
