@@ -75,8 +75,10 @@ def get_information():
     if nifti_image.header['dim'][0] == 4:
          info_str = info_str + " / " + str(nifti_data.shape[2])
     # print empty row after shape information
-    info_str = info_str + "\n"
-    
+    info_str = info_str + "\n\n"
+    # print affine matrix
+    info_str = info_str + "Affine Matrix:" + "\n"
+    info_str = info_str + str(nifti_image.affine)
     # return the information
     return info_str
 
@@ -194,7 +196,7 @@ def display_nifti():
         sixel_dither_initialize( dither, data, width, height, SIXEL_PIXELFORMAT_RGBA8888)
         sixel_encode( data , width, height, 1, dither, output)
 
-        # if not in loop-mode, the terminal does not need to be clean, but 
+        # if not in loop-mode, the terminal does not need to be clean, but
         # just can print out the image, like the "cat"-tool would do
         if active_loop:
              os.system("clear")
@@ -204,7 +206,7 @@ def display_nifti():
         if not active_loop:
            return
 
-        # wait for user to press a key. 
+        # wait for user to press a key.
         read_keyboard_static_view()
 
 
@@ -235,6 +237,19 @@ def get_help():
     # returns this docstring
     return get_help.__doc__
 
+
+#### todo: 4D
+def check_slices( slices ):
+      temp_arg = slices.split(',')
+      # calculate slices
+      for i in range(0, len(temp_arg)):
+          temp_arg[i] = int( temp_arg[i] )-1
+          # set show to the slices, that will be shown
+      if len(temp_arg) == 3:
+         return temp_arg
+      else:
+          print("Slices must be three integers!")
+          exit()
 
 
 # the mainfunction of the niiview-tool
@@ -306,14 +321,9 @@ def main():
 
         # show these slices
         elif opt in ["--slices"]:
-            temp_arg = arg.split(',')
-            # calculate slices
-            for i in range(0, len(temp_arg)):
-                 temp_arg[i] = int( temp_arg[i] )-1
-            # set show to the slices, that will be shown
-            show = temp_arg	
+            show = check_slices( arg )
 
-        # show slices at 
+        # show slices at
         elif opt in ["--percent"]:
             temp_arg = arg.split(',')
             # calculate slices in arg[i]%
