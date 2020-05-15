@@ -1,4 +1,4 @@
-#!/home/tkadelka/env/niiview/bin/python3
+#!/home/tkadelka/env/datalad/bin/python3
 
 import os
 import sys
@@ -10,6 +10,8 @@ from getkey import getkey, keys
 from libsixel import *
 from PIL import Image
 from io import BytesIO
+from matplotlib.backends.backend_agg import FigureCanvasAgg
+import getopt
 
 # plot the selected slices
 def create_plot():
@@ -54,35 +56,34 @@ def get_text():
           )
 
 
+# Information-text about the image
+def get_information():
+    # set empty string for saving information
+    info_str = "\n"
+
+    # add path of nifti file and add empty row
+    info_str = info_str + "file name: " + "\n"
+    info_str = info_str + nifti_filename
+    info_str = info_str + "\n\n"
+
+    # add shape to the information
+    info_str = info_str + "nifti shape:" + "\n"
+    info_str = info_str + str(nifti_data.shape[1]) + " / "
+    info_str = info_str + str(nifti_data.shape[0]) + " / "
+    info_str = info_str + str(nifti_data.shape[2])
+    # add time-information in case of 4D-nifti:
+    if nifti_image.header['dim'][0] == 4:
+         info_str = info_str + " / " + str(nifti_data.shape[2])
+    # print empty row after shape information
+    info_str = info_str + "\n"
+    
+    # return the information
+    return info_str
 
 
-# this function reads the keyboard and calls the function for creating the image.
-def display_nifti():
-    # enable changing of global nifti-data for changing point in time, make figure available
-    global nifti_data, fourth_d, pyplot_image
-
-    # create, open and show nifti in terminal
-    while( True ):
-        # create a jpg from this koordinates of the nifti
-        create_plot( )
-        # empty buffer for image in background and for output
-        s = BytesIO()
-        img_buffer = BytesIO()
-        # save pylot-figure in buffer as image, open as image-file
-        pyplot_image.savefig( img_buffer )
-        pillow_image = Image.open( img_buffer )
-        width, height = pillow_image.size
-        data = pillow_image.tobytes()
-        output = sixel_output_new(lambda data, s: s.write(data), s)
-        dither = sixel_dither_new(256)
-        sixel_dither_initialize(dither, data, width, height, SIXEL_PIXELFORMAT_RGBA8888)
-        sixel_encode(data, width, height, 1, dither, output)
-        os.system("clear")
-        print(s.getvalue().decode('ascii'))
-
-
-
-        # wait for user to press a key. For arrows, change displayed slice.
+def read_keyboard_static_view():
+        global nifti_data
+        # For arrows, change displayed slice.
         # "enter"-key exit the function
         key = getkey()
         # change up-right
@@ -121,35 +122,138 @@ def display_nifti():
         # change point in time
         elif key in ['t']:
                 if fourth_d == -1:
-                    continue
+                    return
                 if fourth_d + 1 < nifti_image.get_fdata().shape[3]:
                     fourth_d = fourth_d + 1
                     nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d+1 ]
         elif key in ['g']:
                 if fourth_d == -1:
-                    continue
+                    return
                 if fourth_d - 1 >= 0:
                     fourth_d = fourth_d - 1
                     nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d-1 ]
         else:
+            loop_active = False
             return
+
+
+# copied by mathis function
+def ignore_spaces_in_arguments(args):
+    """
+        I want to make it easier for the user to insert many files at once are spaces between arguments.
+
+        I want that this is possible: python3 HTCompact -f file1 file2 file3 ... -otheropts
+        What sys.argv[1:] looks like : ['-f', 'file1', 'file2', 'file3', '...', '-otheropts']
+        What I want to look like : ['-f', 'file1 file2 file3 ...', '-otheropts']
+
+        !!!Exactly that is this method doing!!! (because getopt has no such function)
+
+    :param args: is supposed to be a list, in any case it should be the sys.argv[1:] list
+    :return: list, that ignores spaces in the arguments
+    """
+    new_list = list()
+    temp_string = ""
+    index = 0
+    while True:
+        if index < len(args):
+            if args[index].startswith("-"):
+                new_list.append(args[index])
+
+            else:
+                if index < len(args) - 1 and args[index + 1].startswith("-"):
+                    temp_string += args[index]
+                    new_list.append(temp_string)
+                    temp_string = ""
+                else:
+                    temp_string += args[index] + " "
+
+            index += 1
+        else:
+            # if the last arg is no opt, the build up string must be considered, only if not empty
+            if temp_string.__ne__(""):
+                new_list.append(temp_string[:-1])
+            break
+
+    return new_list
+
+
+
+# this function reads the keyboard and calls the function for creating the image.
+def display_nifti():
+    # enable changing of global nifti-data for changing point in time, make figure available
+    global nifti_data, fourth_d, canvas, loop_active
+    dither = sixel_dither_new(256)
+    # create, open and show nifti in terminal
+    while( True ):
+        # create a jpg from this koordinates of the nifti
+        create_plot( )
+        # empty buffer for image in background and for output
+        s = BytesIO()
+        data, (width, height) = canvas.print_to_buffer()
+        output = sixel_output_new(lambda data, s: s.write( data ), s)
+        sixel_dither_initialize( dither, data, width, height, SIXEL_PIXELFORMAT_RGBA8888)
+        sixel_encode( data , width, height, 1, dither, output)
+
+        # if not in loop-mode, the terminal does not need to be clean, but 
+        # just can print out the image, like the "cat"-tool would do
+        if active_loop:
+             os.system("clear")
+        print(s.getvalue().decode('ascii'))
+
+        # if not in loop-mode, exit before reading keyboard!
+        if not active_loop:
+           return
+
+        # wait for user to press a key. 
+        read_keyboard_static_view()
+
+
+
+# define text for help function
+def get_help():
+    """
+    Usage: niiview [ Arguments ] <inputfile>
+
+    Arguments:               ["--help", "--info", "--loop", "--dpi=", "--slices=", "--percent="]
+
+    [--help]                 Show this information page.
+
+    [--info]                 Show basic information about the image, like shape.
+
+    [--loop]                 Open the inputfile in an interactive mode.
+
+    [--dpi=]                 Size of the image that will be displayed in the terminal.
+
+    [--slices=]              By default, niiview shows the middle slices of a given nifti.
+                             This option changes the displayed slices.
+
+    [--percent=]             Instead of giving coordinates in absolute numbers, it is possible
+                             to show them in percent.
+
+
+    """
+    # returns this docstring
+    return get_help.__doc__
+
 
 
 # the mainfunction of the niiview-tool
 def main():
 
-    #### parse arguments from terminal ####
-    parser = argparse.ArgumentParser(description="Generate a nifti image in the terminal.")
-    parser.add_argument("nifti_file")
-    parser.add_argument("--dpi", metavar="N", type=int, help="resolution for plotting (default: 150).", default=150)
-    parser.add_argument("--show", metavar="N", type=str, help="coordinates that will be plotted", default="50,50,50")
-    args = parser.parse_args()
+    #### set global vars and default values ####
+    global nifti_filename, nifti_image, nifti_data, pyplot_image, ax1, ax2, ax3, ax4, show, fourth_d, dpi, canvas, active_loop
 
-    #### set global vars ####
-    global nifti_image, nifti_data, pyplot_image, ax1, ax2, ax3, ax4, show, fourth_d, dpi
-    # Try to load the nifti-data from arguments and check for errors
-    nifti_image = nb.load( args.nifti_file )
-    # get 3D-image (first time point) in case of 4D-input
+    # set nifti for later
+    nifti_filename=""
+    # Try to load the nifti-data from the last argument, otherwise print help and exit
+    try:
+        nifti_filename = sys.argv[-1]
+        nifti_image = nb.load( nifti_filename )
+    except:
+        print( get_help() )
+        return
+
+    # load 3D-image (first time point) as default in case of 4D-input
     if nifti_image.header['dim'][0] == 3:
         nifti_data = nifti_image.get_fdata()
         # no time points given
@@ -157,7 +261,74 @@ def main():
     elif nifti_image.header['dim'][0] == 4:
         nifti_data = nifti_image.get_fdata()[:, :, :, 0]
         fourth_d = 0
-    dpi = args.dpi
+    # set default value for display size
+    dpi = 200
+    # by default, just print the image and exit, like cat
+    active_loop = False
+    # selects middle slices as default vaulues for the koordinates
+    show = [ int((nifti_data.shape[0]/2)-1), int((nifti_data.shape[1]/2)-1) , int((nifti_data.shape[2]/2)-1) ]
+
+
+    #### parse arguments from terminal ####
+
+    # get arguments without spaces
+    better_args = ignore_spaces_in_arguments(sys.argv[1:])
+    # define arguments
+    opts, args = getopt.getopt(better_args, "hs",
+                           ["help", "info", "loop", "dpi=", "slices=", "percent="])
+
+    # loop over arguments and handle them
+    for opt, arg in opts:
+
+        # print help
+        if opt in ["--help"]:
+            print( get_help() )
+            return
+
+        # print image-information instead of image
+        if opt in ["--info"]:
+            print( get_information() )
+            return
+
+        # activate the loop for the interacive mode
+        elif opt in ["--loop"]:
+            active_loop = True
+
+        # set dpi as an integer value
+        elif opt in ["--dpi"]:
+            temp_arg =  int( arg )
+            if temp_arg < 10:
+                dpi = 10
+            elif temp_arg > 200:
+                dpi = 200
+            else:
+                dpi = temp_arg
+
+        # show these slices
+        elif opt in ["--slices"]:
+            temp_arg = arg.split(',')
+            # calculate slices
+            for i in range(0, len(temp_arg)):
+                 temp_arg[i] = int( temp_arg[i] )-1
+            # set show to the slices, that will be shown
+            show = temp_arg	
+
+        # show slices at 
+        elif opt in ["--percent"]:
+            temp_arg = arg.split(',')
+            # calculate slices in arg[i]%
+            for i in range(0, len(temp_arg)):
+                 temp_arg[i] = int( nifti_data.shape[i] / 100.0 *float( temp_arg[i] ) )
+            # set show to the slices, that will be shown
+            show = temp_arg
+
+        # if the argument is unknown, do nothing with it
+        else:
+            return
+
+
+    ##### start to load image and build output #####
+    
     # Disable Toolbar for plots
     plt.rcParams['toolbar'] = 'None'
     # Set rounding
@@ -166,8 +337,9 @@ def main():
     nifti_data[np.isnan(nifti_data)] = 0
     # Black background
     plt.style.use('dark_background')
-    # build main window
+    # build main window and connect to a canvas
     pyplot_image = plt.figure( facecolor='black', figsize=(5, 4), dpi=dpi )
+    canvas = FigureCanvasAgg( pyplot_image )
     # add axes
     ax1 = pyplot_image.add_subplot(2, 2, 1)
     plt.axis('off')
@@ -177,9 +349,7 @@ def main():
     plt.axis('off')
     ax4 = pyplot_image.add_subplot(2, 2, 4)
     plt.axis('off')
-    show = []
-    # selects middle slices as default vaulues for the koordinates
-    show = [ int((nifti_data.shape[0]/2)-1), int((nifti_data.shape[1]/2)-1) , int((nifti_data.shape[2]/2)-1) ]
+
 
     #### open/show the image ####
     display_nifti()
