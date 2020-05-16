@@ -22,7 +22,7 @@ setup(name='niiview',
       ],
 	  scripts=[
 	       'bin/niiview'
-	       ]
+	       ],
 	  cmdclass={
 	        'build_manpages': build_manpages
 	        }
