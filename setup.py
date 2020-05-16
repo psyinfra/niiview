@@ -21,6 +21,6 @@ setup(name='niiview',
 	       'bin/niiview'
 	       ],
 	  data_files = [
-	       ('man/niiview', ['man/niiview1/niiview1'])
+	       ('man/niiview', ['man/niiview1/niiview.1'])
 	  ]
 )
