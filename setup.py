@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-from build_manpages import build_manpages, get_build_py_cmd, get_install_cmd
-from setuptools.command.build_py import build_py
-from setuptools.command.install import install
 
 setup(name='niiview',
       version='2',
@@ -23,7 +20,7 @@ setup(name='niiview',
 	  scripts=[
 	       'bin/niiview'
 	       ],
-	  cmdclass={
-	        'build_manpages': build_manpages
-	        }
+	  data_files = [
+	       ('man/niiview', ['man/niiview.5/'])
+	  ]
 )
