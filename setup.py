@@ -18,7 +18,7 @@ setup(name='niiview',
       'Pillow'
       ],
 	  scripts=[
-	       'bin/niiview'
+	       'bin/niiview',
 	       'man/h1.man'
 	       ]
 )
