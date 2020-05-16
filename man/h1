@@ -13,9 +13,9 @@
 .Op Fl Fl help
 .Op Fl Fl info
 .Op Fl Fl loop
-.Op Fl Fl dpi Ar N
-.Op Fl Fl slices Ar N,N,N
-.Op Fl Fl percent Ar N,N,N
+.Op Fl Fl dpi= Ar N
+.Op Fl Fl slices= Ar N,N,N
+.Op Fl Fl percent= Ar N,N,N
 .Ar nifti_file
 .
 .Sh DESCRIPTION

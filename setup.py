@@ -19,5 +19,6 @@ setup(name='niiview',
       ],
 	  scripts=[
 	       'bin/niiview'
+	       'man/h1.man'
 	       ]
 )

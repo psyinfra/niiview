@@ -36,7 +36,7 @@ def create_plot():
     ax4.clear()
     plt.axis('off')
     ax4.text( 0.15, 0.95, get_text(), horizontalalignment='left', verticalalignment='top', size=6, color='white')
-    #plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+    plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
 
 
@@ -68,8 +68,8 @@ def get_information():
 
     # add shape to the information
     info_str = info_str + "nifti shape:" + "\n"
-    info_str = info_str + str(nifti_data.shape[1]) + " / "
     info_str = info_str + str(nifti_data.shape[0]) + " / "
+    info_str = info_str + str(nifti_data.shape[1]) + " / "
     info_str = info_str + str(nifti_data.shape[2])
     # add time-information in case of 4D-nifti:
     if nifti_image.header['dim'][0] == 4:
@@ -77,7 +77,7 @@ def get_information():
     # print empty row after shape information
     info_str = info_str + "\n\n"
     # print affine matrix
-    info_str = info_str + "Affine Matrix:" + "\n"
+    info_str = info_str + "affine Matrix:" + "\n"
     info_str = info_str + str(nifti_image.affine)
     # return the information
     return info_str
@@ -183,7 +183,7 @@ def ignore_spaces_in_arguments(args):
 # this function reads the keyboard and calls the function for creating the image.
 def display_nifti():
     # enable changing of global nifti-data for changing point in time, make figure available
-    global nifti_data, fourth_d, canvas, loop_active
+    global fourth_d, canvas, loop_active
     dither = sixel_dither_new(256)
     # create, open and show nifti in terminal
     while( True ):
@@ -240,16 +240,53 @@ def get_help():
 
 #### todo: 4D
 def check_slices( slices ):
+      global fourth_d, nifti_data, nifti_filename
       temp_arg = slices.split(',')
       # calculate slices
       for i in range(0, len(temp_arg)):
+          if int( temp_arg[i] ) < 0 or int( temp_arg[i] ) > nifti_data.shape[i]:
+              print("Slice values must be at least 1 and fit to nifti size.\nFor shape call \"niiview --info " + nifti_filename +"\"\n")
+              exit()
           temp_arg[i] = int( temp_arg[i] )-1
           # set show to the slices, that will be shown
-      if len(temp_arg) == 3:
+      if len(temp_arg) == 3 and fourth_d == -1:
+         return temp_arg
+      elif len(temp_arg) == 4 and fourth_d == 0:
          return temp_arg
       else:
-          print("Slices must be three integers!")
+          print("Slices must be three integers for 3D or four integers for 4D images.\n")
           exit()
+
+
+def check_arg_percent( percent ):
+     global fourth_d
+     temp_arg = percent.split(',')
+     # calculate slices in arg[i]%
+     for i in range(0, len(temp_arg)):
+          if int(temp_arg[i]) < 0 or int(temp_arg[i]) > 100:
+              print("Percent values must be between 0 and 100.\n")
+              exit()
+          temp_arg[i] = int( nifti_data.shape[i] / 100.0 *float( temp_arg[i] ) ) -1
+     # check for errors in number of arguments
+     if len(temp_arg) == 3 and fourth_d == -1:
+         return temp_arg
+     elif len(temp_arg) == 4 and fourth_d == 0:
+         return temp_arg
+     else:
+          print("Percents must be three integers between 0 and 100 for 3D or four integers for 4D images.\n")
+          exit()
+
+
+def check_arg_dpi( dpi_arg ):
+       temp_arg =  int( dpi_arg )
+       if temp_arg < 10:
+           temp_arg = 10
+           print( "dpi is set to 10 (minimum size)\n" )
+       elif temp_arg > 200:
+           temp_arg = 200
+           print( "dpi is set to 200 (maximum size)\n" )
+       return temp_arg
+
 
 
 # the mainfunction of the niiview-tool
@@ -260,22 +297,30 @@ def main():
 
     # set nifti for later
     nifti_filename=""
+    nifti_data = []
     # Try to load the nifti-data from the last argument, otherwise print help and exit
     try:
         nifti_filename = sys.argv[-1]
         nifti_image = nb.load( nifti_filename )
+        # Set rounding
+        np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
+
+        # load 3D-image (first time point) as default in case of 4D-input
+        if nifti_image.header['dim'][0] == 3:
+           nifti_data = nifti_image.get_fdata()
+           # no time points given
+           fourth_d = -1
+        elif nifti_image.header['dim'][0] == 4:
+           nifti_data = nifti_image.get_fdata()[:, :, :, 0]
+           fourth_d = 0
+        # Set NAN-values to 0
+        nifti_data[np.isnan(nifti_data)] = 0
+
     except:
         print( get_help() )
         return
 
-    # load 3D-image (first time point) as default in case of 4D-input
-    if nifti_image.header['dim'][0] == 3:
-        nifti_data = nifti_image.get_fdata()
-        # no time points given
-        fourth_d = -1
-    elif nifti_image.header['dim'][0] == 4:
-        nifti_data = nifti_image.get_fdata()[:, :, :, 0]
-        fourth_d = 0
+
     # set default value for display size
     dpi = 200
     # by default, just print the image and exit, like cat
@@ -311,13 +356,7 @@ def main():
 
         # set dpi as an integer value
         elif opt in ["--dpi"]:
-            temp_arg =  int( arg )
-            if temp_arg < 10:
-                dpi = 10
-            elif temp_arg > 200:
-                dpi = 200
-            else:
-                dpi = temp_arg
+            dpi = check_arg_dpi( arg )
 
         # show these slices
         elif opt in ["--slices"]:
@@ -325,12 +364,7 @@ def main():
 
         # show slices at
         elif opt in ["--percent"]:
-            temp_arg = arg.split(',')
-            # calculate slices in arg[i]%
-            for i in range(0, len(temp_arg)):
-                 temp_arg[i] = int( nifti_data.shape[i] / 100.0 *float( temp_arg[i] ) )
-            # set show to the slices, that will be shown
-            show = temp_arg
+            show = check_arg_percent( arg )
 
         # if the argument is unknown, do nothing with it
         else:
@@ -341,10 +375,6 @@ def main():
     
     # Disable Toolbar for plots
     plt.rcParams['toolbar'] = 'None'
-    # Set rounding
-    np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
-    # Set NAN-values to 0
-    nifti_data[np.isnan(nifti_data)] = 0
     # Black background
     plt.style.use('dark_background')
     # build main window and connect to a canvas
