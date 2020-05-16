@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
+from build_manpages import build_manpages, get_build_py_cmd, get_install_cmd
+from setuptools.command.build_py import build_py
+from setuptools.command.install import install
 
 setup(name='niiview',
       version='2',
@@ -18,7 +21,9 @@ setup(name='niiview',
       'Pillow'
       ],
 	  scripts=[
-	       'bin/niiview',
-	       'man/h1.man'
+	       'bin/niiview'
 	       ]
+	  cmdclass={
+	        'build_manpages': build_manpages
+	        }
 )
