@@ -1,42 +1,42 @@
-NIIVIEW                              LOCAL                             NIIVIEW
-
-NNAAMMEE
-     nniiiivviieeww — display a nifti file with an xterminal.
-
-SSYYNNOOPPSSIISS
-     nniiiivviieeww [----hheellpp] [----iinnffoo] [----lloooopp] [----ddppii== _N] [----sslliicceess== _N_,_N_,_N]
-             [----ppeerrcceenntt== _N_,_N_,_N] _n_i_f_t_i___f_i_l_e
-
-DDEESSCCRRIIPPTTIIOONN
-     Niiview displays a brain image from a nifti file in an xterminal.  Its
-     arguments are: nniiiivviieeww
-
-----hheellpp
-     Display the help text of niiview.
-
-----iinnffoo
-     Print basic information about the nifti file.
-
-----lloooopp
-     This opens the image in a loop, so that it is possible to go trough the
-     brain with the keyboard.
-
-----ddppii
-     This argument changes the size of the image that gets displayed in the
-     terminal.
-
-----sslliicceess
-     Shows the brain at the koordinates x,y,z (zb niiview --show 50,50,50 im‐
-     age.nii ).  By default, it selects the middle slices of the image.
-
-----ppeerrcceenntt
-     Instead of showing the brain at specific slices, this option shows the
-     slices in percentages.  By default the middle slices get shown at
-     50,50,50.
-
-nniiffttii__ffiillee
-     This argument discribes a nifti file, that can be displayed with niiview.
-     If called without further options, niiview displays the middle slices of
-     the brain image and exits the program.
-
-BSD                              May 14, 2020                              BSD
+.\" This file is licensed under the BSD\[hy]3\[hy]Clause license.
+.\" See the AUTHORS and LICENSE files for more information.
+.Dd May 14, 2020
+.Dt NIIVIEW
+.Os
+.
+.Sh NAME
+.Nm niiview
+.Nd display a nifti file with an xterminal.
+.
+.Sh SYNOPSIS
+.Nm
+.Op Fl Fl help
+.Op Fl Fl info
+.Op Fl Fl loop
+.Op Fl Fl dpi= Ar N
+.Op Fl Fl slices= Ar N,N,N
+.Op Fl Fl percent= Ar N,N,N
+.Ar nifti_file
+.
+.Sh DESCRIPTION
+Niiview displays a brain image from a nifti file in an xterminal.
+Its arguments are:
+.Nm
+.Sh --help
+Display the help text of niiview.
+.Sh --info
+Print basic information about the nifti file.
+.Sh --loop
+This opens the image in a loop, so that it is possible to go trough the brain with the keyboard.
+.Sh --dpi
+This argument changes the size of the image that gets displayed in the terminal.
+.Sh --slices
+Shows the brain at the koordinates x,y,z (zb niiview --show 50,50,50 image.nii ).
+By default, it selects the middle slices of the image.
+.Sh --percent
+Instead of showing the brain at specific slices, this option shows the slices in percentages.
+By default the middle slices get shown at 50,50,50.
+.Sh nifti_file
+This argument discribes a nifti file, that can be displayed with niiview.
+If called without further options, niiview displays the middle slices of the brain image and exits the program.
+.
