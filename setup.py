@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 
 setup(name='niiview',
-      version='2',
+      version='1',
       description='A tool for displaying niftis in xterminals.',
       author='Tobias Kadelka',
       author_email='t.kadelka@fz-juelich.de',
@@ -21,6 +21,6 @@ setup(name='niiview',
 	       'bin/niiview'
 	       ],
 	  data_files = [
-	       ('man/niiview', ['man/niiview/niiview'])
+	       ('man/niiview', ['man/niiview1/niiview1'])
 	  ]
 )
