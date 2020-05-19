@@ -15,7 +15,7 @@ import getopt
 
 # plot the selected slices
 def create_plot():
-
+    global active_loop
     # coronal
     ax1.imshow(
         nifti_data[:, show[1], :],
@@ -35,7 +35,10 @@ def create_plot():
     ).set_cmap('gray')
     ax4.clear()
     plt.axis('off')
-    ax4.text( 0.15, 0.95, get_text(), horizontalalignment='left', verticalalignment='top', size=6, color='white')
+    if active_loop:
+        ax4.text( 0.15, 0.95, (get_text() + get_information() ), horizontalalignment='left', verticalalignment='top', size=6, color='white')
+    else:
+        ax4.text( 0.15, 0.95, get_information(), horizontalalignment='left', verticalalignment='top', size=6, color='white')
     plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
 
 
