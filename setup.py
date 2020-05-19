@@ -21,6 +21,6 @@ setup(name='niiview',
 	       'bin/niiview'
 	       ],
 	  data_files = [
-	       ('share/man/man1', ['man/man1/niiview.1.gz'])
+	       ('share/man/man1', ['niiview.1'])
 	  ]
 )
