@@ -1,8 +1,7 @@
 .\" This file is licensed under the BSD\[hy]3\[hy]Clause license.
 .\" See the AUTHORS and LICENSE files for more information.
-.Dd May 14, 2020
+.Dd May 19, 2020
 .Dt NIIVIEW
-.Os
 .
 .Sh NAME
 .Nm niiview
@@ -13,16 +12,16 @@
 .Op Fl Fl help
 .Op Fl Fl info
 .Op Fl Fl loop
-.Op Fl Fl dpi= Ar N
-.Op Fl Fl slices= Ar N,N,N
-.Op Fl Fl percent= Ar N,N,N
-.Op Fl Fl step_size= Ar N
-.Ar nifti_file
+.Op Fl Fl dpi Ar N
+.Op Fl Fl slices Ar N,N,N
+.Op Fl Fl percent Ar N,N,N
+.Op Fl Fl step_size Ar N
+.Fa nifti_file
 .
 .Sh DESCRIPTION
-Niiview displays a brain image from a nifti file in an xterminal.
-Its arguments are:
 .Nm
+displays a brain image from a nifti file in an xterminal.
+Its arguments are:
 .Sh --help
 Display the help text of niiview.
 .Sh --info

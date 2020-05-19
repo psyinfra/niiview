@@ -84,43 +84,43 @@ def get_information():
 
 
 def read_keyboard_static_view():
-        global nifti_data
+        global nifti_data, step_size
         # For arrows, change displayed slice.
         # "enter"-key exit the function
         key = getkey()
         # change up-right
         if key in ['w']:
-            if show[0] + 10 >= nifti_data.shape[0]:
+            if show[0] + step_size >= nifti_data.shape[0]:
                 show[0] = nifti_data.shape[0]-1
             else:
-                show[0] = show[0] + 10
+                show[0] = show[0] + step_size
         elif key in ['s']:
-            if show[0] - 10 <= 0:
+            if show[0] - step_size <= 0:
                 show[0] = 0
             else:
-                show[0] = show[0] - 10
+                show[0] = show[0] - step_size
         # change up-left
         elif key in ['q']:
-            if show[1] + 10 >= nifti_data.shape[1]:
+            if show[1] + step_size >= nifti_data.shape[1]:
                 show[1] = nifti_data.shape[1]-1
             else:
-                show[1] = show[1] + 10
+                show[1] = show[1] + step_size
         elif key in ['a']:
-            if show[1] - 10 <= 0:
+            if show[1] - step_size <= 0:
                 show[1] = 0
             else:
-                show[1] = show[1] - 10
+                show[1] = show[1] - step_size
         # change down-left
         elif key in ['e']:
-            if show[2] + 10 >= nifti_data.shape[2]:
+            if show[2] + step_size >= nifti_data.shape[2]:
                 show[2] = nifti_data.shape[2]-1
             else:
-                show[2] = show[2] + 10
+                show[2] = show[2] + step_size
         elif key in ['d']:
-            if show[2] - 10 <= 0:
+            if show[2] - step_size <= 0:
                 show[2] = 0
             else:
-                show[2] = show[2] - 10
+                show[2] = show[2] - step_size
         # change point in time
         elif key in ['t']:
                 if fourth_d == -1:
@@ -214,16 +214,17 @@ def display_nifti():
 # define text for help function
 def get_help():
     """
+
 NAME
      niiview — display a nifti file with an xterminal.
 
 SYNOPSIS
-     niiview [--help] [--info] [--loop] [--dpi= N] [--slices= N,N,N]
-             [--percent= N,N,N] [--step_size= N] nifti_file
+     niiview [--help] [--info] [--loop] [--dpi N] [--slices N,N,N]
+             [--percent N,N,N] [--step_size N] nifti_file
 
 DESCRIPTION
-     Niiview displays a brain image from a nifti file in an xterminal.  Its
-     arguments are: niiview
+     niiview displays a brain image from a nifti file in an xterminal.  Its
+     arguments are:
 
 --help
      Display the help text of niiview.
@@ -235,40 +236,55 @@ DESCRIPTION
      This opens the image in a loop, so that it is possible to go trough the
      brain with the keyboard.
 
---dpi=N
+--dpi
      This argument changes the size of the image that gets displayed in the
      terminal.
 
---slices=N,N,N
+--slices
      Shows the brain at the koordinates x,y,z (zb niiview --show 50,50,50 im‐
      age.nii ).  By default, it selects the middle slices of the image.
 
---percent=N,N,N
+--percent
      Instead of showing the brain at specific slices, this option shows the
      slices in percentages.  By default the middle slices get shown at
      50,50,50.
 
---step_size=N
+--step_size
      While in loop-mode, this option sets the number of image-slices that get
-     changed each time a key is pressed. By default, the step_size is 10.
+     changed each time a key is pressed.  By default, the step_size is 10.
 
 nifti_file
      This argument discribes a nifti file, that can be displayed with niiview.
      If called without further options, niiview displays the middle slices of
      the brain image and exits the program.
 
-
     """
     # returns this docstring
     return get_help.__doc__
 
 
+
+# checks, if value is a fine integer
+def check_for_int( arg ):
+    # try to convert the value, then return True.
+    try:
+        int(arg)
+        return True
+    # if try fails, return False
+    except ValueError:
+        return False
+
+
 #### todo: 4D
-def check_slices( slices ):
+def check_arg_slices( slices ):
       global fourth_d, nifti_data, nifti_filename
       temp_arg = slices.split(',')
       # calculate slices
       for i in range(0, len(temp_arg)):
+          # check, if the command line arg value is a fine integer
+          if not check_for_int( temp_arg[i] ):
+              print("Slice values must be Integers.\n")
+              exit()
           if int( temp_arg[i] ) < 0 or int( temp_arg[i] ) > nifti_data.shape[i]:
               print("Slice values must be at least 1 and fit to nifti size.\nFor shape call \"niiview --info " + nifti_filename +"\"\n")
               exit()
@@ -288,6 +304,10 @@ def check_arg_percent( percent ):
      temp_arg = percent.split(',')
      # calculate slices in arg[i]%
      for i in range(0, len(temp_arg)):
+          # check, if the command line arg value is a fine integer
+          if not check_for_int( temp_arg[i] ):
+              print("Percent values must be Integers.\n")
+              exit()
           if int(temp_arg[i]) < 0 or int(temp_arg[i]) > 100:
               print("Percent values must be between 0 and 100.\n")
               exit()
@@ -303,6 +323,10 @@ def check_arg_percent( percent ):
 
 
 def check_arg_dpi( dpi_arg ):
+       # check if value is proper integer
+       if not check_for_int( dpi_arg ):
+           print("dpi value must be an Integer.\n")
+           exit()
        temp_arg =  int( dpi_arg )
        if temp_arg < 10:
            temp_arg = 10
@@ -314,7 +338,11 @@ def check_arg_dpi( dpi_arg ):
 
 
 
-def check_step_size( step_arg ):
+def check_arg_step_size( step_arg ):
+       # check if value is proper integer
+       if not check_for_int( step_arg ):
+           print("step_size value must be an Integer.\n")
+           exit()
        temp_arg =  int( step_arg )
        if temp_arg < 1:
            temp_arg = 1
@@ -372,9 +400,12 @@ def main():
     #### parse arguments from terminal ####
 
     # get arguments without spaces
-    better_args = ignore_spaces_in_arguments(sys.argv[1:])
+    better_args = ignore_spaces_in_arguments(sys.argv[1:-1])
     # define arguments
-    opts, args = getopt.getopt(better_args, "hs",
+    opts, args = getopt.getopt(
+                           # arguments to be parsed:
+                           better_args, "hs",
+                           # arguments to be parsed:
                            ["help", "info", "loop", "dpi=", "slices=", "percent=", "step_size="])
 
     # loop over arguments and handle them
@@ -400,7 +431,7 @@ def main():
 
         # show these slices
         elif opt in ["--slices"]:
-            show = check_slices( arg )
+            show = check_arg_slices( arg )
 
         # show slices at
         elif opt in ["--percent"]:
@@ -408,7 +439,7 @@ def main():
 
         # change step size
         elif opt in ["--step_size"]:
-            step_size = check_step_size( arg )
+            step_size = check_arg_step_size( arg )
 
         # if the argument is unknown, do nothing with it
         else:
