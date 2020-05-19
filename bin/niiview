@@ -214,23 +214,48 @@ def display_nifti():
 # define text for help function
 def get_help():
     """
-    Usage: niiview [ Arguments ] <inputfile>
+NAME
+     niiview — display a nifti file with an xterminal.
 
-    Arguments:               ["--help", "--info", "--loop", "--dpi=", "--slices=", "--percent="]
+SYNOPSIS
+     niiview [--help] [--info] [--loop] [--dpi= N] [--slices= N,N,N]
+             [--percent= N,N,N] [--step_size= N] nifti_file
 
-    [--help]                 Show this information page.
+DESCRIPTION
+     Niiview displays a brain image from a nifti file in an xterminal.  Its
+     arguments are: niiview
 
-    [--info]                 Show basic information about the image, like shape.
+--help
+     Display the help text of niiview.
 
-    [--loop]                 Open the inputfile in an interactive mode.
+--info
+     Print basic information about the nifti file.
 
-    [--dpi=]                 Size of the image that will be displayed in the terminal.
+--loop
+     This opens the image in a loop, so that it is possible to go trough the
+     brain with the keyboard.
 
-    [--slices=]              By default, niiview shows the middle slices of a given nifti.
-                             This option changes the displayed slices.
+--dpi=N
+     This argument changes the size of the image that gets displayed in the
+     terminal.
 
-    [--percent=]             Instead of giving coordinates in absolute numbers, it is possible
-                             to show them in percent.
+--slices=N,N,N
+     Shows the brain at the koordinates x,y,z (zb niiview --show 50,50,50 im‐
+     age.nii ).  By default, it selects the middle slices of the image.
+
+--percent=N,N,N
+     Instead of showing the brain at specific slices, this option shows the
+     slices in percentages.  By default the middle slices get shown at
+     50,50,50.
+
+--step_size=N
+     While in loop-mode, this option sets the number of image-slices that get
+     changed each time a key is pressed. By default, the step_size is 10.
+
+nifti_file
+     This argument discribes a nifti file, that can be displayed with niiview.
+     If called without further options, niiview displays the middle slices of
+     the brain image and exits the program.
 
 
     """
@@ -289,11 +314,24 @@ def check_arg_dpi( dpi_arg ):
 
 
 
+def check_step_size( step_arg ):
+       temp_arg =  int( step_arg )
+       if temp_arg < 1:
+           temp_arg = 1
+           print( "step_size is set to 1 (minimum size)\n" )
+       elif temp_arg > 300:
+           temp_arg = 1000
+           print( "step_size is set to 1000 (maximum size)\n" )
+       return temp_arg
+
+
+
+
 # the mainfunction of the niiview-tool
 def main():
 
     #### set global vars and default values ####
-    global nifti_filename, nifti_image, nifti_data, pyplot_image, ax1, ax2, ax3, ax4, show, fourth_d, dpi, canvas, active_loop
+    global nifti_filename, nifti_image, nifti_data, pyplot_image, ax1, ax2, ax3, ax4, show, fourth_d, dpi, canvas, step_size, active_loop
 
     # set nifti for later
     nifti_filename=""
@@ -327,6 +365,8 @@ def main():
     active_loop = False
     # selects middle slices as default vaulues for the koordinates
     show = [ int((nifti_data.shape[0]/2)-1), int((nifti_data.shape[1]/2)-1) , int((nifti_data.shape[2]/2)-1) ]
+    # number of voxel-slices, that pressing a key in loop mode changes
+    step_size = 10
 
 
     #### parse arguments from terminal ####
@@ -335,7 +375,7 @@ def main():
     better_args = ignore_spaces_in_arguments(sys.argv[1:])
     # define arguments
     opts, args = getopt.getopt(better_args, "hs",
-                           ["help", "info", "loop", "dpi=", "slices=", "percent="])
+                           ["help", "info", "loop", "dpi=", "slices=", "percent=", "step_size="])
 
     # loop over arguments and handle them
     for opt, arg in opts:
@@ -365,6 +405,10 @@ def main():
         # show slices at
         elif opt in ["--percent"]:
             show = check_arg_percent( arg )
+
+        # change step size
+        elif opt in ["--step_size"]:
+            step_size = check_step_size( arg )
 
         # if the argument is unknown, do nothing with it
         else:

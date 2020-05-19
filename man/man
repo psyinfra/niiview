@@ -16,6 +16,7 @@
 .Op Fl Fl dpi= Ar N
 .Op Fl Fl slices= Ar N,N,N
 .Op Fl Fl percent= Ar N,N,N
+.Op Fl Fl step_size= Ar N
 .Ar nifti_file
 .
 .Sh DESCRIPTION
@@ -36,6 +37,9 @@ By default, it selects the middle slices of the image.
 .Sh --percent
 Instead of showing the brain at specific slices, this option shows the slices in percentages.
 By default the middle slices get shown at 50,50,50.
+.Sh --step_size
+While in loop-mode, this option sets the number of image-slices that get changed each time a key is pressed. 
+By default, the step_size is 10.
 .Sh nifti_file
 This argument discribes a nifti file, that can be displayed with niiview.
 If called without further options, niiview displays the middle slices of the brain image and exits the program.
