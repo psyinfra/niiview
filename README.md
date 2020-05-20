@@ -6,6 +6,9 @@ middle of a given NIfTI image and prints out basic information about it.
 The tool also has an interactive mode, which enables the user to go through the 
 different slices of the brain with the keyboard.
 
+#### Terminals that support sixel:
+- *niiview* was tested with xterminal.
+
 It is based on the idea of https://github.com/MIC-DKFZ/niicat
 
 ## How to Install
@@ -18,8 +21,12 @@ pip3 install git+https://jugit.fz-juelich.de/inm7/infrastructure/loony_tools/nii
 niiview file.nii.gz
 ```
 
-## Problem handling
+## Possible problems and bugs
 
 In case you are experiencing problems with the use of *niiview*, make sure that you
-are using a terminal, that supports sixel.
-niiview was tested with xterminal.
+are using a terminal, that supports sixel and use proper xsettings.
+To load the correct xsettings, I had to run:
+```xrdb ~/.Xdefaults```
+
+Also, there might be different modalities or types of NIfTI images that were not
+tested and could be problematic to open with *niiview*.
