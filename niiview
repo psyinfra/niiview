@@ -219,47 +219,48 @@ def get_help():
     """
 
 NAME
-     niiview — display a nifti file with an xterminal.
+     niiview — display NIfTI images in sixel-aware terminals
 
 SYNOPSIS
-     niiview [--help] [--info] [--loop] [--dpi N] [--slices N,N,N]
-             [--percent N,N,N] [--step_size N] nifti_file
+     niiview [--help] | [--info] [--loop] [--dpi N] [--slices N,N,N]
+             [--percent N,N,N] [--step_size N] file.nii
 
 DESCRIPTION
-     niiview displays a brain image from a nifti file in an xterminal.  Its
-     arguments are:
+     niiview displays brain images from NIfTI files (compressed or uncompressed)
+     in sixel-aware terminals. The default behavior is to display the middle
+     slices; an interactive mode offering keyboard navigation is also available.
 
 --help
      Display the help text of niiview.
 
 --info
-     Print basic information about the nifti file.
+     Print basic information about the NIfTI file.
 
 --loop
-     This opens the image in a loop, so that it is possible to go trough the
-     brain with the keyboard.
+     Open the image interactively, with keyboard bindings to navigate through
+     the brain image.
 
 --dpi
-     This argument changes the size of the image that gets displayed in the
-     terminal.
+     Control the size of the image displayed in the terminal.
 
 --slices
-     Shows the brain at the koordinates x,y,z (zb niiview --show 50,50,50 im‐
-     age.nii ).  By default, it selects the middle slices of the image.
+     Shows the brain at the coordinates x,y,z (for example: niiview --show
+     21,96,43 image.nii ). By default, the middle slices of the image are
+     displayed.
 
 --percent
      Instead of showing the brain at specific slices, this option shows the
-     slices in percentages.  By default the middle slices get shown at
+     slices in percentages. By default the middle slices get shown at
      50,50,50.
 
 --step_size
-     While in loop-mode, this option sets the number of image-slices that get
-     changed each time a key is pressed.  By default, the step_size is 10.
+     While in loop-mode, this option control the number of slices skipped each
+     time a key is pressed. The default step_size is 10.
 
 nifti_file
-     This argument discribes a nifti file, that can be displayed with niiview.
-     If called without further options, niiview displays the middle slices of
-     the brain image and exits the program.
+     The NIfTI file to be displayed with niiview. If called without additional
+     arguments, niiview displays the middle slices of the brain image and exits
+     the program.
 
     """
     # returns this docstring
@@ -450,7 +451,7 @@ def main():
 
 
     ##### start to load image and build output #####
-    
+
     # Disable Toolbar for plots
     plt.rcParams['toolbar'] = 'None'
     # Black background
