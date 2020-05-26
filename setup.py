@@ -10,15 +10,15 @@ setup(name='niiview',
       packages=find_packages(),
       license='ISC',
       install_requires=[
-      'nibabel',
-      'matplotlib',
-      'numpy',
-      'libsixel-python',
-      'getkey',
-      'Pillow'
+          'nibabel',
+          'matplotlib',
+          'numpy',
+          'libsixel-python',
+          'getkey',
+          'Pillow'
       ],
       scripts=[
-	  'niiview'
+          'niiview'
       ],
       data_files = [('share/man/man1', ['niiview.1'])]
 )
