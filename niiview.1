@@ -1,45 +1,83 @@
-.\" This file is licensed under the BSD\[hy]3\[hy]Clause license.
+.\" This file is licensed under the CC\[hy]BY\[hy]SA license.
 .\" See the AUTHORS and LICENSE files for more information.
 .Dd May 19, 2020
-.Dt NIIVIEW
+.Dt NIIVIEW 1
+.Os \" Current operating system.
 .
 .Sh NAME
 .Nm niiview
-.Nd display a nifti file with an xterminal.
+.Nd display NIfTI images in sixel\[hy]aware terminals.
 .
 .Sh SYNOPSIS
 .Nm
 .Op Fl Fl help
+|
 .Op Fl Fl info
 .Op Fl Fl loop
 .Op Fl Fl dpi Ar N
 .Op Fl Fl slices Ar N,N,N
 .Op Fl Fl percent Ar N,N,N
 .Op Fl Fl step_size Ar N
-.Fa nifti_file
+.Ar nifti_file
 .
 .Sh DESCRIPTION
 .Nm
-displays a brain image from a nifti file in an xterminal.
-Its arguments are:
-.Sh --help
-Display the help text of niiview.
-.Sh --info
-Print basic information about the nifti file.
-.Sh --loop
-This opens the image in a loop, so that it is possible to go trough the brain with the keyboard.
-.Sh --dpi
-This argument changes the size of the image that gets displayed in the terminal.
-.Sh --slices
-Shows the brain at the koordinates x,y,z (zb niiview --show 50,50,50 image.nii ).
-By default, it selects the middle slices of the image.
-.Sh --percent
-Instead of showing the brain at specific slices, this option shows the slices in percentages.
-By default the middle slices get shown at 50,50,50.
-.Sh --step_size
-While in loop-mode, this option sets the number of image-slices that get changed each time a key is pressed. 
-By default, the step_size is 10.
-.Sh nifti_file
-This argument discribes a nifti file, that can be displayed with niiview.
-If called without further options, niiview displays the middle slices of the brain image and exits the program.
+displays brain images from NIfTI files (compressed or uncompressed) in
+sixel\[hy]aware terminals. The default behavior is to display the middle slices;
+an interactive mode offering keyboard navigation is also available.
 .
+.Sh Options
+.Bl -tag -width Ds
+.It Fl Fl help
+Print a summary of
+.Nm Ap s
+options and then exit.
+.It Fl Fl info
+Print basic information about the NIfTI file.
+.It Fl Fl loop
+Open the image interactively, with keyboard bindings to navigate through the
+brain image.
+.It Fl Fl dpi Ar N
+Control the size of the image displayed in the terminal.
+.It Fl Fl slices Ar N,N,N
+Displays the brain slices at the specified coordinates x,y,z. By default, the
+middle slices of the image are displayed.
+.It Fl Fl percent Ar N,N,N
+Instead of showing the brain at specific slices, this option shows the slices in
+percentages. By default the middle slices (50,50,50) are displayed.
+.It Fl Fl step_size Ar N
+While in loop\[hy]mode, this option control the number of slices skipped each
+time a key is pressed. The default step_size is 10.
+.It Ar nifti_file
+The NIfTI file to be displayed with
+.Nm .
+If called without additional arguments, the middle slices of the brain image are
+displayed and the program exits.
+.
+.Sh EXIT STATUS
+.Nm
+exits 0 on success and 1 if an error occurs.
+.
+.Sh EXAMPLES
+.Pp
+Display brain slices from specific coordinates.
+.Dl niiview \-\-show 21,96,43 file.nii
+.
+.Sh SEE ALSO
+The
+.Nm
+repository is available at
+.Lk https://jugit.fz-juelich.de/inm7/infrastructure/loony_tools/niiview
+Bug reports, patches, and (constructive) input are always welcome.
+.Sh AUTHOR
+.Nm
+was created by
+.An Tobias Kadelka
+.Mt t.kadelka@fz-juelich.de .
+See the AUTHORS file for more information.
+.
+.Sh COPYRIGHT
+.Nm
+is released under the
+.Qq ISC License.
+See the LICENSE file for more information.
