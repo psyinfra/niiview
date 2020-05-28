@@ -408,25 +408,26 @@ def main():
     # define arguments
     opts, args = getopt.getopt(
                            # arguments to be parsed:
-                           better_args, "hs",
+                           better_args, "hind:s:p:s:",
                            # arguments to be parsed:
-                           ["help", "info", "loop", "dpi=", "slices=", "percent=", "step_size="])
+                           ["help", "info", "navigation", "dpi=", "slices=", "percent=", "step_size="]
+                           )
 
     # loop over arguments and handle them
     for opt, arg in opts:
 
         # print help
-        if opt in ["--help"]:
+        if opt in ["--help", "-h"]:
             print( get_help() )
             return
 
         # print image-information instead of image
-        if opt in ["--info"]:
+        if opt in ["--info", "-i"]:
             print( get_information() )
             return
 
         # activate the loop for the interacive mode
-        elif opt in ["--loop"]:
+        elif opt in ["--navigation", "-n"]:
             active_loop = True
 
         # set dpi as an integer value
