@@ -204,7 +204,6 @@ def display_nifti():
         if active_loop:
              os.system("clear")
         print(s.getvalue().decode('ascii'))
-
         # if not in loop-mode, exit before reading keyboard!
         if not active_loop:
            return
@@ -410,7 +409,7 @@ def main():
                            # arguments to be parsed:
                            better_args, "hind:s:p:s:",
                            # arguments to be parsed:
-                           ["help", "info", "navigation", "dpi=", "slices=", "percent=", "step_size="]
+                           ["help", "info", "navigate", "dpi=", "slices=", "percent=", "step_size="]
                            )
 
     # loop over arguments and handle them
@@ -427,7 +426,7 @@ def main():
             return
 
         # activate the loop for the interacive mode
-        elif opt in ["--navigation", "-n"]:
+        elif opt in ["--navigate", "-n"]:
             active_loop = True
 
         # set dpi as an integer value

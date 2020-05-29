@@ -2,7 +2,8 @@
 
 from setuptools import setup, find_packages
 
-setup(name='niiview',
+setup(
+      name='niiview',
       version='1.0.0',
       description='Display NIfTI images in sixel-aware terminals.',
       author='Tobias Kadelka',
@@ -17,8 +18,11 @@ setup(name='niiview',
           'getkey',
           'Pillow'
       ],
+      python_requires = ">=3.0",
       scripts=[
           'niiview'
       ],
-      data_files = [('share/man/man1', ['niiview.1'])]
+      data_files = [
+          ('share/man/man1', ['niiview.1'])
+      ]
 )
