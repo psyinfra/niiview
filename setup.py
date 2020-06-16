@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='niiview',
-    version='1.0.0',
+    version='1.0.1',
     description='Display NIfTI images in sixel-aware terminals.',
     author='Tobias Kadelka',
     author_email='t.kadelka@fz-juelich.de',
