@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+''' niiview, a sixel based python tool for displaying NIfTIs'''
 
 import os
 import sys
@@ -7,15 +8,42 @@ import matplotlib.pyplot as plt
 import numpy as np
 import nibabel as nb
 from getkey import getkey, keys
-from libsixel import *
+from libsixel import sixel_output_new, sixel_dither_initialize, sixel_encode, sixel_dither_new, SIXEL_PIXELFORMAT_RGBA8888
 from PIL import Image
 from io import BytesIO
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import getopt
 
+#### module variables ####
+nifti_filename = ""
+nifti_image = None
+nifti_data = None # np.empty([0,0], dtype=float)
+pyplot_image = None
+canvas = None
+# create axis
+ax1 = None
+ax2 = None
+ax3 = None
+ax4 = None
+# by default, fourth_d is -1, but it saves the time-dimension if time series are given
+fourth_d = -1
+show = []
+image_output_size = 200
+canvas = ""
+step_size = 10
+# is the tool in the neuro-mode (one window active, cross selects slices) or is it
+# open in the simple mode, where it is possible to navigate free trough the brain?
+active_mode = "neuro"
+active_window = 1
+# if not called with --navigate, this variable gets checked to decide, if the keyboard will
+# be read or if the program should be terminated.
+interactive_mode = False
+
+
 # plot the selected slices
 def create_plot():
-    global active_loop
+    global ax1, ax2, ax3, ax4
+    global interactive_mode
     # coronal
     ax1.imshow(
         nifti_data[:, show[1], :],
@@ -33,34 +61,71 @@ def create_plot():
         nifti_data[:, :, show[2]],
         aspect=nifti_image.header['pixdim'][2] / nifti_image.header['pixdim'][1]
     ).set_cmap('gray')
+
     ax4.clear()
     plt.axis('off')
-    if active_loop:
-        ax4.text( 0.15, 0.95, (get_text() + get_information() ), horizontalalignment='left', verticalalignment='top', size=6, color='white')
+    if interactive_mode:
+        ax4.text(
+                 0.15,
+                 0.95,
+                 (build_keyboard_navigation_description() + get_image_information()),
+                 horizontalalignment='left',
+                 verticalalignment='top',
+                 size=6,
+                 color='white'
+                 )
     else:
-        ax4.text( 0.15, 0.95, get_information(), horizontalalignment='left', verticalalignment='top', size=6, color='white')
+        ax4.text(0.15,
+                 0.95,
+                 get_image_information(),
+                 horizontalalignment='left',
+                 verticalalignment='top',
+                 size=6,
+                 color='white'
+                 )
     plt.subplots_adjust(left=0, bottom=0, right=1, top=1, wspace=0, hspace=0)
+
+
+    # decide based on mode and active window, how to display the images
+#    if active_mode == "simple":
+#        if   active_window == 1:
+#                ax1.hlines((nifti_data.shape[0]/2.), 0, int(nifti_data.shape[0]),
+#                            colors='white', linestyles='dotted', linewidth=1)
+#                ax1.vlines((nifti_data.shape[0]/2.), 0, int(nifti_data.shape[0]),
+#                            colors='white', linestyles='dotted', linewidth=1)
+#        elif active_window == 2:
+#                ax2.hlines((nifti_data.shape[1]/2.), 0, int(nifti_data.shape[1]),
+#                            colors='white', linestyles='dotted', linewidth=1)
+#                ax2.vlines((nifti_data.shape[1]/2.), 0, int(nifti_data.shape[1]),
+#                            colors='white', linestyles='dotted', linewidth=1)
+#        elif active_window == 3:
+#                ax3.hlines((nifti_data.shape[2]/2.), 0, int(nifti_data.shape[2]),
+#                            colors='white', linestyles='dotted', linewidth=1)
+#                ax3.vlines((nifti_data.shape[2]/2.), 0, int(nifti_data.shape[2]),
+#                            colors='white', linestyles='dotted', linewidth=1)
+#
+#    elif active_mode == "simple":
+#                h1 = None
 
 
 
 # build information
-def get_text():
+def build_keyboard_navigation_description():
     if nifti_image.header['dim'][0] == 4:
         return str(
-                "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " left\n"
-              + "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " right\n"
-              + "(E/D) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
-              + "(T/G) -> " + str(fourth_d+1) + "/" + str(nifti_image.get_fdata().shape[3]) + " in time\n"
-              )
+            "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " left\n"
+            + "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " right\n"
+            + "(E/D) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
+            + "(T/G) -> " + str(fourth_d+1) + "/"
+            + str(nifti_image.get_fdata().shape[3]) + " in time\n")
     return str(
-                "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " left\n"
-              + "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " right\n"
-              + "(E/D) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n"
-          )
+        "(Q/A) -> " + str(show[1]+1)  + "/" + str(nifti_data.shape[1]) + " left\n"
+        + "(W/S) -> " + str(show[0]+1)  + "/" + str(nifti_data.shape[0]) + " right\n"
+        + "(E/D) -> " + str(show[2]+1)  + "/" + str(nifti_data.shape[2]) + " down\n")
 
 
 # Information-text about the image
-def get_information():
+def get_image_information():
     # set empty string for saving information
     info_str = "\n"
 
@@ -76,7 +141,7 @@ def get_information():
     info_str = info_str + str(nifti_data.shape[2])
     # add time-information in case of 4D-nifti:
     if nifti_image.header['dim'][0] == 4:
-         info_str = info_str + " / " + str(nifti_data.shape[2])
+        info_str = info_str + " / " + str(nifti_data.shape[2])
     # print empty row after shape information
     info_str = info_str + "\n\n"
     # print affine matrix
@@ -86,189 +151,204 @@ def get_information():
     return info_str
 
 
-def read_keyboard_static_view():
-        global nifti_data, step_size
-        # For arrows, change displayed slice.
-        # "enter"-key exit the function
-        key = getkey()
-        # change up-right
-        if key in ['w']:
-            if show[0] + step_size >= nifti_data.shape[0]:
-                show[0] = nifti_data.shape[0]-1
-            else:
-                show[0] = show[0] + step_size
-        elif key in ['s']:
-            if show[0] - step_size <= 0:
-                show[0] = 0
-            else:
-                show[0] = show[0] - step_size
-        # change up-left
-        elif key in ['q']:
-            if show[1] + step_size >= nifti_data.shape[1]:
-                show[1] = nifti_data.shape[1]-1
-            else:
-                show[1] = show[1] + step_size
-        elif key in ['a']:
-            if show[1] - step_size <= 0:
-                show[1] = 0
-            else:
-                show[1] = show[1] - step_size
-        # change down-left
-        elif key in ['e']:
-            if show[2] + step_size >= nifti_data.shape[2]:
-                show[2] = nifti_data.shape[2]-1
-            else:
-                show[2] = show[2] + step_size
-        elif key in ['d']:
-            if show[2] - step_size <= 0:
-                show[2] = 0
-            else:
-                show[2] = show[2] - step_size
-        # change point in time
-        elif key in ['t']:
-                if fourth_d == -1:
-                    return
-                if fourth_d + 1 < nifti_image.get_fdata().shape[3]:
-                    fourth_d = fourth_d + 1
-                    nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d+1 ]
-        elif key in ['g']:
-                if fourth_d == -1:
-                    return
-                if fourth_d - 1 >= 0:
-                    fourth_d = fourth_d - 1
-                    nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d-1 ]
+def read_keyboard_simple_view():
+    # For arrows, change displayed slice.
+    # "enter"-key exit the function
+    key = getkey()
+    # change up-right
+    if key in ['w']:
+        if show[0] + step_size >= nifti_data.shape[0]:
+            show[0] = nifti_data.shape[0]-1
         else:
-            loop_active = False
+            show[0] = show[0] + step_size
+    elif key in ['s']:
+        if show[0] - step_size <= 0:
+            show[0] = 0
+        else:
+            show[0] = show[0] - step_size
+    # change up-left
+    elif key in ['q']:
+        if show[1] + step_size >= nifti_data.shape[1]:
+            show[1] = nifti_data.shape[1]-1
+        else:
+            show[1] = show[1] + step_size
+    elif key in ['a']:
+        if show[1] - step_size <= 0:
+            show[1] = 0
+        else:
+            show[1] = show[1] - step_size
+    # change down-left
+    elif key in ['e']:
+        if show[2] + step_size >= nifti_data.shape[2]:
+            show[2] = nifti_data.shape[2]-1
+        else:
+            show[2] = show[2] + step_size
+    elif key in ['d']:
+        if show[2] - step_size <= 0:
+            show[2] = 0
+        else:
+            show[2] = show[2] - step_size
+    # change point in time
+    elif key in ['t']:
+        if fourth_d == -1:
             return
+        if fourth_d + 1 < nifti_image.get_fdata().shape[3]:
+            fourth_d = fourth_d + 1
+            selected_nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d+1]
+    elif key in ['g']:
+        if fourth_d == -1:
+            return
+        if fourth_d - 1 >= 0:
+            fourth_d = fourth_d - 1
+            selected_nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d-1]
+    elif key in ['o']:
+        niiview_mode = "neuro"
+    else:
+        interactive_mode = False
+        return
 
 
-# copied by mathis function
-def ignore_spaces_in_arguments(args):
-    """
-        I want to make it easier for the user to insert many files at once are spaces between arguments.
-
-        I want that this is possible: python3 HTCompact -f file1 file2 file3 ... -otheropts
-        What sys.argv[1:] looks like : ['-f', 'file1', 'file2', 'file3', '...', '-otheropts']
-        What I want to look like : ['-f', 'file1 file2 file3 ...', '-otheropts']
-
-        !!!Exactly that is this method doing!!! (because getopt has no such function)
-
-    :param args: is supposed to be a list, in any case it should be the sys.argv[1:] list
-    :return: list, that ignores spaces in the arguments
-    """
-    new_list = list()
-    temp_string = ""
-    index = 0
-    while True:
-        if index < len(args):
-            if args[index].startswith("-"):
-                new_list.append(args[index])
-
-            else:
-                if index < len(args) - 1 and args[index + 1].startswith("-"):
-                    temp_string += args[index]
-                    new_list.append(temp_string)
-                    temp_string = ""
-                else:
-                    temp_string += args[index] + " "
-
-            index += 1
+def read_keyboard_neuro_view():
+    global nifti_data, fourth_d
+    # For arrows, change displayed slice.
+    # "enter"-key exit the function
+    key = getkey()
+    # change up-right
+    if key in ['w']:
+        if show[0] + step_size >= nifti_data.shape[0]:
+            show[0] = nifti_data.shape[0]-1
         else:
-            # if the last arg is no opt, the build up string must be considered, only if not empty
-            if temp_string.__ne__(""):
-                new_list.append(temp_string[:-1])
-            break
-
-    return new_list
-
+            show[0] = show[0] + step_size
+    elif key in ['s']:
+        if show[0] - step_size <= 0:
+            show[0] = 0
+        else:
+            show[0] = show[0] - step_size
+    # change up-left
+    elif key in ['q']:
+        if show[1] + step_size >= nifti_data.shape[1]:
+            show[1] = nifti_data.shape[1]-1
+        else:
+            show[1] = show[1] + step_size
+    elif key in ['a']:
+        if show[1] - step_size <= 0:
+            show[1] = 0
+        else:
+            show[1] = show[1] - step_size
+    # change down-left
+    elif key in ['e']:
+        if show[2] + step_size >= nifti_data.shape[2]:
+            show[2] = nifti_data.shape[2]-1
+        else:
+            show[2] = show[2] + step_size
+    elif key in ['d']:
+        if show[2] - step_size <= 0:
+            show[2] = 0
+        else:
+            show[2] = show[2] - step_size
+    # change point in time
+    elif key in ['t']:
+        if fourth_d == -1:
+            return
+        if fourth_d + 1 < nifti_image.get_fdata().shape[3]:
+            fourth_d = fourth_d + 1
+            nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d+1]
+    elif key in ['g']:
+        if fourth_d == -1:
+            return
+        if fourth_d - 1 >= 0:
+            fourth_d = fourth_d - 1
+            nifti_data = nifti_image.get_fdata()[:, :, :, fourth_d-1]
+    elif key in ['o']:
+        active_mode = "simple"
+#       active_window = (active_window+1)%3
+    else:
+        interactive_mode = False
+        return
 
 
 # this function reads the keyboard and calls the function for creating the image.
 def display_nifti():
-    # enable changing of global nifti-data for changing point in time, make figure available
-    global fourth_d, canvas, loop_active
     dither = sixel_dither_new(256)
     # create, open and show nifti in terminal
-    while( True ):
+    while True:
         # create a jpg from this koordinates of the nifti
-        create_plot( )
+        create_plot()
         # empty buffer for image in background and for output
-        s = BytesIO()
+        bytestream = BytesIO()
         data, (width, height) = canvas.print_to_buffer()
-        output = sixel_output_new(lambda data, s: s.write( data ), s)
-        sixel_dither_initialize( dither, data, width, height, SIXEL_PIXELFORMAT_RGBA8888)
-        sixel_encode( data , width, height, 1, dither, output)
+        output = sixel_output_new(lambda data, bytestream: bytestream.write(data), bytestream)
+        sixel_dither_initialize(dither, data, width, height, SIXEL_PIXELFORMAT_RGBA8888)
+        sixel_encode(data, width, height, 1, dither, output)
 
-        # if not in loop-mode, the terminal does not need to be clean, but
+        # if not in the interactive mode, the terminal does not need to be clean, but
         # just can print out the image, like the "cat"-tool would do
-        if active_loop:
-             os.system("clear")
-        print(s.getvalue().decode('ascii'))
+        if interactive_mode:
+            os.system("clear")
+        print(bytestream.getvalue().decode('ascii'))
         # if not in loop-mode, exit before reading keyboard!
-        if not active_loop:
-           return
+        if not interactive_mode:
+            return
 
         # wait for user to press a key.
-        read_keyboard_static_view()
-
-
+        if active_mode == "simple":
+            read_keyboard_simple_view()
+        elif active_mode == "neuro":
+            read_keyboard_neuro_view()
 
 # define text for help function
 def get_help():
     """
-
 NAME
-     niiview — display NIfTI images in sixel-aware terminals
+     niiview -- display NIfTI images in sixel-aware terminals.
 
 SYNOPSIS
-     niiview [--help] | [--info] [--loop] [--dpi N] [--slices N,N,N]
-             [--percent N,N,N] [--step_size N] file.nii
+     niiview [--help] | [--info] [--navigate] [--size N] [--slices N,N,N]
+             [--percent N,N,N] [--step_size N] nifti_file
 
 DESCRIPTION
-     niiview displays brain images from NIfTI files (compressed or uncompressed)
-     in sixel-aware terminals. The default behavior is to display the middle
-     slices; an interactive mode offering keyboard navigation is also available.
+     niiview displays brain images from NIfTI files (compressed or uncom-
+     pressed) in sixel-aware terminals. The default behavior is to display the
+     middle slices; an interactive mode offering keyboard navigation is also
+     available.
 
---help
-     Display the help text of niiview.
+Options
+     --help  Print a summary of niiview's options and then exit.
 
---info
-     Print basic information about the NIfTI file.
+     --info  Print basic information about the NIfTI file.
 
---loop
-     Open the image interactively, with keyboard bindings to navigate through
-     the brain image.
+     --navigate
+             Open the image interactively, with keyboard bindings to navigate
+             through the brain image.
 
---dpi
-     Control the size of the image displayed in the terminal.
+     --size N
+             Control the size of the image displayed in the terminal.
 
---slices
-     Shows the brain at the coordinates x,y,z (for example: niiview --show
-     21,96,43 image.nii ). By default, the middle slices of the image are
-     displayed.
+     --slices N,N,N
+             Displays the brain slices at the specified coordinates x,y,z. By
+             default, the middle slices of the image are displayed.
 
---percent
-     Instead of showing the brain at specific slices, this option shows the
-     slices in percentages. By default the middle slices get shown at
-     50,50,50.
+     --percent N,N,N
+             Instead of showing the brain at specific slices, this option
+             shows the slices in percentages. By default the middle slices
+             (50,50,50) are displayed.
 
---step_size
-     While in loop-mode, this option control the number of slices skipped each
-     time a key is pressed. The default step_size is 10.
+     --step_size N
+             While in loop-mode, this option control the number of slices
+             skipped each time a key is pressed. The default step_size is 10.
 
-nifti_file
-     The NIfTI file to be displayed with niiview. If called without additional
-     arguments, niiview displays the middle slices of the brain image and exits
-     the program.
-
+     nifti_file
+             The NIfTI file to be displayed with niiview.  If called without
+             additional arguments, the middle slices of the brain image are
+             displayed and the program exits.
     """
     # returns this docstring
     return get_help.__doc__
 
 
 
-# checks, if value is a fine integer
-def check_for_int( arg ):
+# checks, if value is convertable to integer
+def is_int(arg):
     # try to convert the value, then return True.
     try:
         int(arg)
@@ -278,187 +358,172 @@ def check_for_int( arg ):
         return False
 
 
-#### todo: 4D
-def check_arg_slices( slices ):
-      global fourth_d, nifti_data, nifti_filename
-      temp_arg = slices.split(',')
-      # calculate slices
-      for i in range(0, len(temp_arg)):
-          # check, if the command line arg value is a fine integer
-          if not check_for_int( temp_arg[i] ):
-              print("Slice values must be Integers.\n")
-              exit()
-          if int( temp_arg[i] ) < 0 or int( temp_arg[i] ) > nifti_data.shape[i]:
-              print("Slice values must be at least 1 and fit to nifti size.\nFor shape call \"niiview --info " + nifti_filename +"\"\n")
-              exit()
-          temp_arg[i] = int( temp_arg[i] )-1
-          # set show to the slices, that will be shown
-      if len(temp_arg) == 3 and fourth_d == -1:
-         return temp_arg
-      elif len(temp_arg) == 4 and fourth_d == 0:
-         return temp_arg
-      else:
-          print("Slices must be three integers for 3D or four integers for 4D images.\n")
-          exit()
+def check_arg_slices(slices):
+    temp_arg = slices.split(',')
+    # calculate slices
+    for i, elem in enumerate(temp_arg):
+        # check, if the command line arg value is an int
+        if not is_int(temp_arg[i]):
+            print("Slice values must be Integers.\n")
+            sys.exit()
+        if int(temp_arg[i]) < 0 or int(temp_arg[i]) > nifti_data.shape[i]:
+            print("Slice values must be at least 1 and fit to nifti size.\n"
+                  + "For shape call \"niiview --info " + nifti_filename +"\"\n")
+            sys.exit()
+        temp_arg[i] = int(temp_arg[i])-1
+        # set show to the slices, that will be shown
+    if (len(temp_arg) == 3 and fourth_d == -1) or (len(temp_arg) == 4 and fourth_d == 0):
+        return temp_arg
+    else:
+        print("Slices must be three integers for 3D or four integers for 4D images.\n")
+        sys.exit()
 
 
-def check_arg_percent( percent ):
-     global fourth_d
-     temp_arg = percent.split(',')
-     # calculate slices in arg[i]%
-     for i in range(0, len(temp_arg)):
-          # check, if the command line arg value is a fine integer
-          if not check_for_int( temp_arg[i] ):
-              print("Percent values must be Integers.\n")
-              exit()
-          if int(temp_arg[i]) < 0 or int(temp_arg[i]) > 100:
-              print("Percent values must be between 0 and 100.\n")
-              exit()
-          temp_arg[i] = int( nifti_data.shape[i] / 100.0 *float( temp_arg[i] ) ) -1
-     # check for errors in number of arguments
-     if len(temp_arg) == 3 and fourth_d == -1:
-         return temp_arg
-     elif len(temp_arg) == 4 and fourth_d == 0:
-         return temp_arg
-     else:
-          print("Percents must be three integers between 0 and 100 for 3D or four integers for 4D images.\n")
-          exit()
+def check_arg_percent(percent):
+    is_4D = fourth_d
+    temp_arg = percent.split(',')
+    # calculate slices in arg[i]%
+    for i, elem in enumerate(temp_arg):
+        # check, if the command line arg value is an int
+        if not is_int(temp_arg[i]):
+            print("Percent values must be Integers.\n")
+            sys.exit()
+        if int(temp_arg[i]) < 0 or int(temp_arg[i]) > 100:
+            print("Percent values must be between 0 and 100.\n")
+            sys.exit()
+        temp_arg[i] = int(nifti_data.shape[i] / 100.0 *float(temp_arg[i])) -1
+    # check for errors in number of arguments
+    if len(temp_arg) == 3 and is_4D == -1:
+        return temp_arg
+    elif len(temp_arg) == 4 and is_4D == 0:
+        return temp_arg
+    else:
+        print("Percents must be three integers between 0 and "
+              + "100 for 3D or four integers for 4D images.\n")
+        sys.exit()
 
 
-def check_arg_dpi( dpi_arg ):
-       # check if value is proper integer
-       if not check_for_int( dpi_arg ):
-           print("dpi value must be an Integer.\n")
-           exit()
-       temp_arg =  int( dpi_arg )
-       if temp_arg < 10:
-           temp_arg = 10
-           print( "dpi is set to 10 (minimum size)\n" )
-       elif temp_arg > 200:
-           temp_arg = 200
-           print( "dpi is set to 200 (maximum size)\n" )
-       return temp_arg
+def check_arg_size(size_arg):
+    # check if value is proper integer
+    if not is_int(size_arg):
+        print("size value must be an Integer.\n")
+        sys.exit()
+    temp_arg = int(size_arg)
+    if temp_arg < 10:
+        temp_arg = 10
+        print("size is set to 10 (minimum size)\n")
+    elif temp_arg > 200:
+        temp_arg = 200
+        print("size is set to 200 (maximum size)\n")
+    return temp_arg
 
 
-
-def check_arg_step_size( step_arg ):
-       # check if value is proper integer
-       if not check_for_int( step_arg ):
-           print("step_size value must be an Integer.\n")
-           exit()
-       temp_arg =  int( step_arg )
-       if temp_arg < 1:
-           temp_arg = 1
-           print( "step_size is set to 1 (minimum size)\n" )
-       elif temp_arg > 300:
-           temp_arg = 1000
-           print( "step_size is set to 1000 (maximum size)\n" )
-       return temp_arg
-
-
+def check_arg_step_size(step_arg):
+    # check if value is proper integer
+    if not is_int(step_arg):
+        print("step_size value must be an Integer.\n")
+        sys.exit()
+    temp_arg = int(step_arg)
+    if temp_arg < 1:
+        temp_arg = 1
+        print("step_size is set to 1 (minimum size)\n")
+    elif temp_arg > 300:
+        temp_arg = 1000
+        print("step_size is set to 1000 (maximum size)\n")
+    return temp_arg
 
 
 # the mainfunction of the niiview-tool
 def main():
+    #### set default values and variables ####
+    global nifti_data, nifti_image, nifti_filename
+    global ax1, ax2, ax3, ax4, show, canvas, pyplot_image
+    global fourth_d, image_output_size, step_size
+    global active_mode, active_window, interactive_mode
 
-    #### set global vars and default values ####
-    global nifti_filename, nifti_image, nifti_data, pyplot_image, ax1, ax2, ax3, ax4, show, fourth_d, dpi, canvas, step_size, active_loop
-
-    # set nifti for later
-    nifti_filename=""
-    nifti_data = []
     # Try to load the nifti-data from the last argument, otherwise print help and exit
     try:
         nifti_filename = sys.argv[-1]
-        nifti_image = nb.load( nifti_filename )
+        nifti_image = nb.load(nifti_filename)
         # Set rounding
         np.set_printoptions(formatter={'float': lambda x: "{0:0.2f}".format(x)})
-
         # load 3D-image (first time point) as default in case of 4D-input
         if nifti_image.header['dim'][0] == 3:
-           nifti_data = nifti_image.get_fdata()
-           # no time points given
-           fourth_d = -1
+            nifti_data = nifti_image.get_fdata()
+            fourth_d = -1
         elif nifti_image.header['dim'][0] == 4:
-           nifti_data = nifti_image.get_fdata()[:, :, :, 0]
-           fourth_d = 0
+            nifti_data = nifti_image.get_fdata()[:, :, :, 0]
+            fourth_d = 0
         # Set NAN-values to 0
         nifti_data[np.isnan(nifti_data)] = 0
-
     except:
-        print( get_help() )
+        print(get_help())
         return
 
-
-    # set default value for display size
-    dpi = 200
-    # by default, just print the image and exit, like cat
-    active_loop = False
+    # starts with 1 instead of zero, cause the axis in the image are named ax1-3
+    active_window = 1
     # selects middle slices as default vaulues for the koordinates
-    show = [ int((nifti_data.shape[0]/2)-1), int((nifti_data.shape[1]/2)-1) , int((nifti_data.shape[2]/2)-1) ]
-    # number of voxel-slices, that pressing a key in loop mode changes
+    show = [int((nifti_data.shape[0]/2)-1),
+            int((nifti_data.shape[1]/2)-1),
+            int((nifti_data.shape[2]/2)-1)]
+    # number of voxel-slices, that pressing a key in navigate mode changes
     step_size = 10
 
-
     #### parse arguments from terminal ####
-
     # get arguments without spaces
-    better_args = ignore_spaces_in_arguments(sys.argv[1:-1])
+    better_args = sys.argv[1:-1]
     # define arguments
     opts, args = getopt.getopt(
-                           # arguments to be parsed:
-                           better_args, "hind:s:p:s:",
-                           # arguments to be parsed:
-                           ["help", "info", "navigate", "dpi=", "slices=", "percent=", "step_size="]
-                           )
+        # arguments to be parsed:
+        better_args, "hins:s:p:s:",
+        # arguments to be parsed:
+        ["help", "info", "navigate", "size=", "slices=", "percent=", "step_size="]
+    )
 
     # loop over arguments and handle them
     for opt, arg in opts:
-
         # print help
         if opt in ["--help", "-h"]:
-            print( get_help() )
+            print(get_help())
             return
 
         # print image-information instead of image
         if opt in ["--info", "-i"]:
-            print( get_information() )
+            print(get_image_information())
             return
 
         # activate the loop for the interacive mode
         elif opt in ["--navigate", "-n"]:
-            active_loop = True
+            interactive_mode = True
 
-        # set dpi as an integer value
-        elif opt in ["--dpi"]:
-            dpi = check_arg_dpi( arg )
+        # set size as an integer value
+        elif opt in ["--size"]:
+            image_output_size = check_arg_size(arg)
 
         # show these slices
         elif opt in ["--slices"]:
-            show = check_arg_slices( arg )
+            show = check_arg_slices(arg)
 
         # show slices at
         elif opt in ["--percent"]:
-            show = check_arg_percent( arg )
+            show = check_arg_percent(arg)
 
         # change step size
         elif opt in ["--step_size"]:
-            step_size = check_arg_step_size( arg )
+            step_size = check_arg_step_size(arg)
 
         # if the argument is unknown, do nothing with it
         else:
             return
 
-
     ##### start to load image and build output #####
-
     # Disable Toolbar for plots
     plt.rcParams['toolbar'] = 'None'
     # Black background
     plt.style.use('dark_background')
     # build main window and connect to a canvas
-    pyplot_image = plt.figure( facecolor='black', figsize=(5, 4), dpi=dpi )
-    canvas = FigureCanvasAgg( pyplot_image )
+    pyplot_image = plt.figure(facecolor='black', figsize=(5, 4), dpi=image_output_size)
+    canvas = FigureCanvasAgg(pyplot_image)
     # add axes
     ax1 = pyplot_image.add_subplot(2, 2, 1)
     plt.axis('off')
@@ -474,9 +539,6 @@ def main():
     display_nifti()
 
 
-
 # standard call
 if __name__ == '__main__':
     main()
-
-
