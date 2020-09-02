@@ -44,7 +44,7 @@ interactive_mode = False
 def create_plot():
     global ax1, ax2, ax3, ax4
     global active_mode, interactive_mode
-    
+
     # coronal
     ax1.imshow(
         nifti_data[:, show[1], :],
