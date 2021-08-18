@@ -25,7 +25,7 @@ sudo apt install libsixel-bin
 ```
 python3 -m venv ~/.venv/niiview
 source ~/.venv/niiview/bin/activate
-pip3 install git+https://jugit.fz-juelich.de/inm7/infrastructure/loony_tools/niiview
+pip3 install git+https://github.com/psyinfra/niiview/
 niiview file.nii.gz
 ```
 
