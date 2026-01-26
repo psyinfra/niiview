@@ -1,3 +1,9 @@
+# Migrated to Codeberg
+
+This project is no longer developed on GitHub and has been migrated to Codeberg:
+
+https://codeberg.org/psyinfra/niiview
+
 ## About *niiview*
 
 *niiview* is a Python3 based tool, which can **display 3D and 4D .nii and
